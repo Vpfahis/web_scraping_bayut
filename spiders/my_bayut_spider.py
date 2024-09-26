@@ -1,6 +1,8 @@
-####### FOR CSV #########
+####### Final Code for both json and csv output#########
+
 import scrapy
 import csv
+import json
 from scrapy.exceptions import CloseSpider
 
 class MyBayutSpider(scrapy.Spider):
@@ -10,17 +12,20 @@ class MyBayutSpider(scrapy.Spider):
 
     def __init__(self, *args, **kwargs):
         """
-        Initialize the spider and open the CSV file for writing.
+        Initialize the spider and open both CSV and JSON files for writing.
         """
         super(MyBayutSpider, self).__init__(*args, **kwargs)
-        self.output_file = 'bayut_properties.csv'
-
-        # Open the CSV file for writing
-        self.csv_file = open(self.output_file, 'w', newline='', encoding='utf-8')
+        
+        # CSV file setup
+        self.output_csv_file = 'bayut_properties1.csv'
+        self.csv_file = open(self.output_csv_file, 'w', newline='', encoding='utf-8')
         self.csv_writer = csv.writer(self.csv_file)
-
-        # Write the header row on the left side
         self.csv_writer.writerow(['Field Name', 'Property 1', 'Property 2', 'Property 3', '...'])
+
+        # JSON file setup
+        self.output_json_file = 'bayut_properties2.json'
+        self.json_file = open(self.output_json_file, 'w', encoding='utf-8')
+        self.json_file.write('[\n')  # Start the JSON array
 
         # Initialize a counter for the number of crawled properties
         self.property_count = 0
@@ -94,12 +99,18 @@ class MyBayutSpider(scrapy.Spider):
             'Amenities': amenities
         }
 
-        # Write each property field in column format (column title on the left side)
+        # Write each property field in column format (column title on the left side) to CSV
         for field_name, field_value in property_details.items():
-            # Ensure field_value is a string before writing to CSV
             if isinstance(field_value, list):
                 field_value = ", ".join(field_value)
             self.csv_writer.writerow([field_name, field_value])
+
+        # Write property details as JSON entry
+        json.dump(property_details, self.json_file, ensure_ascii=False, indent=4)
+
+        # Add a comma and a newline after each property (except for the last one)
+        if self.property_count < self.max_properties - 1:
+            self.json_file.write(',\n')
 
         # Increment the property counter
         self.property_count += 1
@@ -110,6 +121,11 @@ class MyBayutSpider(scrapy.Spider):
 
     def close(self, reason):
         """
-        Close the CSV file when the spider is finished.
+        Close the CSV and JSON files when the spider is finished.
         """
+        # Close the JSON array
+        self.json_file.write('\n]')
+        self.json_file.close()
+
+        # Close the CSV file
         self.csv_file.close()
