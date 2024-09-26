@@ -1,3 +1,4 @@
+####### FOR CSV #########
 import scrapy
 import csv
 from scrapy.exceptions import CloseSpider
